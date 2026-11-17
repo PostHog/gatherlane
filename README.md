@@ -2,18 +2,38 @@
 
 A local-first community events demo. Events are fictional and their dates recur annually.
 
-## Run
+## Quick setup
 
-Requires Node.js 20.19+ or 22.12+.
+On macOS or Linux, open a terminal and run:
 
 ```sh
-npm ci
-npm run dev
-npm test
-npm run build
+curl -fsSL https://raw.githubusercontent.com/PostHog/gatherlane/main/setup.sh | bash
 ```
 
-Bun and pnpm can also run the scripts (`bun install && bun run dev`, or `pnpm install && pnpm dev`). The npm lockfile is the canonical lockfile for CI.
+On Windows, open PowerShell and run:
+
+```powershell
+irm https://raw.githubusercontent.com/PostHog/gatherlane/main/setup.ps1 | iex
+```
+
+The scripts check for Git and Node.js, ask before installing missing prerequisites, clone the repository into a new `gatherlane` folder in your current directory, install packages, and start the app. Open the **Local** URL printed in the terminal; press Ctrl+C to stop. They require an internet connection and will not overwrite an existing folder. Git installation may require administrator permissions. Windows automatic installation requires Windows Package Manager (`winget`); unsupported systems may need manual installation.
+
+Review the scripts before running them: [macOS/Linux](setup.sh), [Windows](setup.ps1). Downloading and running them requires access to this repository; the one-line commands work without GitHub authentication once it is public.
+
+For later sessions, run `cd gatherlane` followed by `npm run dev`. If the macOS/Linux script installed its own Node.js, first run the `export PATH=...` command printed by the script, or install Node.js system-wide.
+
+## Manual setup
+
+Install Git and Node.js 20.19+ or 22.12+, then run:
+
+```sh
+git clone https://github.com/PostHog/gatherlane.git
+cd gatherlane
+npm ci
+npm run dev
+```
+
+Run `npm test` for tests and `npm run build` for a production build. Bun and pnpm can also run the scripts (`bun install && bun run dev`, or `pnpm install && pnpm dev`). The npm lockfile is the canonical lockfile for CI.
 
 ## Deploy
 
