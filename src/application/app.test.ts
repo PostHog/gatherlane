@@ -1,0 +1,64 @@
+import { describe, expect, test } from "vitest";
+import { createApp } from "./index";
+import { storageRepository } from "../infrastructure/storage";
+import { validate, remaining } from "../domain";
+import type { Event } from "../domain";
+const event: Event = {
+  id: "one",
+  title: "One",
+  description: "A",
+  date: "2030-01-01",
+  time: "10:00",
+  location: "Here",
+  category: "Arts",
+  capacity: 3,
+  available: 2,
+  price: 0,
+};
+function setup() {
+  const map = new Map<string, string>();
+  const storage = {
+    getItem: (k: string) => map.get(k) ?? null,
+    setItem: (k: string, v: string) => {
+      map.set(k, v);
+    },
+    removeItem: (k: string) => {
+      map.delete(k);
+    },
+    clear: () => map.clear(),
+    key: (i: number) => [...map.keys()][i] ?? null,
+    get length() {
+      return map.size;
+    },
+  };
+  return { storage, app: createApp([event], storageRepository(storage)) };
+}
+describe("booking rules", () => {
+  test("validates fields and capacity", () => {
+    expect(validate("", "bad", 0, 2)).toEqual({
+      name: "Enter your name.",
+      email: "Enter a valid email address.",
+      quantity: "Choose at least one ticket.",
+    });
+    expect(validate("A", "a@b.co", 3, 2).quantity).toBeTruthy();
+  });
+  test("prevents duplicates and restores capacity on cancellation", () => {
+    const { app } = setup();
+    const first = app.register(event, "A", "a@b.co", 2);
+    expect(first.registration).toBeDefined();
+    expect(remaining(event, app.read().registrations)).toBe(0);
+    expect(app.register(event, "A", "A@b.co", 1).errors.email).toBeTruthy();
+    app.cancel(first.registration!.id);
+    expect(remaining(event, app.read().registrations)).toBe(2);
+  });
+  test("persists and rejects invalid data without overwriting it", () => {
+    const { app, storage } = setup();
+    app.toggle("one");
+    expect(storageRepository(storage).read().saved).toEqual(["one"]);
+    storage.setItem("gatherlane-v1", "{broken");
+    expect(() => app.read()).toThrow("invalid");
+    expect(storage.getItem("gatherlane-v1")).toBe("{broken");
+    storage.removeItem("gatherlane-v1");
+    expect(app.read().saved).toEqual([]);
+  });
+});
